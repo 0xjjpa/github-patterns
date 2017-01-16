@@ -59,13 +59,13 @@ form { text-align: center; display: block; width: 100%; margin-bottom: 30px; }
 </head>
 
 <body translate="no">
-  <h1> Data Visualization: what languages got the most GitHub stars in 2016?
+  <h1> Data Visualization: What languages got the most GitHub stars in 2016?
   </h1>
   <form>
     <label> Write down your Github username to see your most starred language in
       2016</label>
-  <input type="text" value="jjperezaguinaga" />
-  <button> See my chart </button>
+  <input name='user' type="text" placeholder="Short format e.g. jjperezaguinaga" />
+  <button onclick="window.location.href='/?user=' + this.name.value" > See my chart </button>
   </form>
 
   <p class="footer">Made by <a href="https://twitter.com/jjperezaguinaga"
