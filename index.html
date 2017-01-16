@@ -1,0 +1,471 @@
+
+<!DOCTYPE html>
+<html >
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="shortcut icon" type="image/x-icon" href="https://assets.jjperezaguinaga.com/articles/v1/github-patterns/favicon.ico" />
+  <title>What languages got the most GitHub stars in 2016?</title>
+  <meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge"/>
+<meta name="description" content="A streamgraph of  github starred languages on 2016."/>
+
+<meta name="keywords" content="javascript, d3, visualisation"/><meta name="author" content="Jose Aguinaga"/>
+<link rel="dns-prefetch" href="https://fonts.googleapis.com"/><link rel="dns-prefetch" href="https://assets.jjperezaguinaga.com"/>
+<meta content="https://assets.jjperezaguinaga.com/articles/v1/github-starring-patterns_128x128.jpg" itemprop="image"/>
+
+<link rel="author" href="https://plus.google.com/115504253650773840278"/>
+
+<link href="https://starred.jjperezaguinaga.com" rel="canonical">
+
+<link href='https://fonts.googleapis.com/css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Merriweather:400' rel='stylesheet' type='text/css'>
+
+<meta property="og:url" content="https://starred.jjperezaguinaga.com"/>
+
+<meta property="og:site_name" content="Github starred languages in 2016 | Jose Aguinaga"/>
+
+<meta property="og:description" content="A streamgraph of  github starred languages on 2016."/>
+<meta property="og:image" content="https://assets.jjperezaguinaga.com/articles/v1/github-starring-patterns_1200x675.jpg"/>
+
+<meta property="og:type" content="website"/>
+<meta name="apple-mobile-web-app-title" content="Github starred languages in 2016 | Jose Aguinaga"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="@jjperezaguinaga" name="twitter:site"/>
+<meta content="https://starred.jjperezaguinaga.com" name="twitter:url"/>
+<meta content="Github starred languages in 2016 | Jose Aguinaga" name="twitter:title"/>
+<meta content="A streamgraph of  github starred languages on 2016." name="twitter:description"/>
+<meta content="https://assets.jjperezaguinaga.com/articles/v1/github-starring-patterns_1200x675.jpg" name="twitter:image"/>
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1"/>
+<link rel="home" href="https://starred.jjperezaguinaga.com"/>
+<link rel="apple-touch-icon" type="image/png" href="https://assets.jjperezaguinaga.com/articles/v1/apple-touch-icon.png"/>
+<link rel="image_src" href="https://assets.jjperezaguinaga.com/articles/v1/github-starring-patterns_180x180.jpg"/>
+  
+  
+  
+  
+  
+  
+  
+  
+</head>
+
+<body translate="no" >
+
+  
+  
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.29/browser-polyfill.min.js'></script>
+<script src='https://d3js.org/colorbrewer.v1.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.29/browser.min.js'></script>
+<script src='https://unpkg.com/store@1.3.20'></script>
+<script src='https://unpkg.com/js-sha1@0.4.1'></script>
+<script src='https://unpkg.com/moment@2.17.1'></script>
+<script src='https://unpkg.com/bluebird@3.4.7'></script>
+<script src='https://wzrd.in/bundle/parse-link-header@0.4.1'></script>
+<script src='https://wzrd.in/bundle/ramda'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+
+    <script>
+    'use strict';
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+
+/*
+The MIT License (MIT)
+
+Copyright (c) Jose Aguinaga <jj.perez.aguinaga@gmail.com> (jjperezaguinaga.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+var linkParser = require('parse-link-header');
+var R = require('ramda');
+
+var isFromAtLeast2016 = function isFromAtLeast2016(project) {
+  return moment(project.starred_at).year() >= 2016;
+};
+var isFrom2016 = function isFrom2016(project) {
+  return moment(project.starred_at).year() === 2016;
+};
+var getMonth = function getMonth(project) {
+  return moment(project.starred_at).format('MMMM');
+};
+
+var languageLens = function languageLens(project) {
+  return R.lensProp(project.repo.language);
+};
+var dateLens = function dateLens(project) {
+  return R.lensProp(getMonth(project));
+};
+
+var getUrls = function getUrls(user) {
+  var urls = store.get(user);
+  return urls ? JSON.parse(urls) : [];
+};
+
+var addUrl = function addUrl(url, user) {
+  var urls = getUrls(user);
+  return urls.includes(url) ? false : store.set(user, JSON.stringify(urls.concat(url)));
+};
+
+var hasUrl = function hasUrl(url, user) {
+  return getUrls(user).includes(url);
+};
+
+var load = function () {
+  var ref = _asyncToGenerator(regeneratorRuntime.mark(function _callee(url, user) {
+    var hash, isStored, headers, requestData, request, response, projectCollection, linkHeaders, nextUrl, nextProjectCollections, urls;
+    return regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            hash = sha1(url);
+            isStored = hasUrl(url, user);
+
+            if (isStored) {
+              _context.next = 25;
+              break;
+            }
+
+            headers = new Headers({
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3.star+json'
+            });
+            requestData = {
+              method: 'GET',
+              headers: headers,
+              mode: 'cors',
+              cache: 'default'
+            };
+            request = new Request(url, requestData);
+            _context.next = 8;
+            return fetch(request);
+
+          case 8:
+            response = _context.sent;
+            _context.next = 11;
+            return response.json();
+
+          case 11:
+            projectCollection = _context.sent;
+
+            store.set(hash, JSON.stringify(projectCollection));
+            addUrl(url, user);
+
+            if (!projectCollection.every(isFromAtLeast2016)) {
+              _context.next = 22;
+              break;
+            }
+
+            linkHeaders = linkParser(response.headers.getAll('Link').join());
+
+            if (!linkHeaders) {
+              _context.next = 22;
+              break;
+            }
+
+            nextUrl = linkHeaders.next;
+            _context.next = 20;
+            return load(nextUrl.url, user);
+
+          case 20:
+            nextProjectCollections = _context.sent;
+            return _context.abrupt('return', nextProjectCollections.concat(projectCollection));
+
+          case 22:
+            return _context.abrupt('return', [projectCollection]);
+
+          case 25:
+            urls = getUrls(user);
+            projectCollection = urls.map(sha1).map(store.get).map(JSON.parse);
+            return _context.abrupt('return', [projectCollection]);
+
+          case 28:
+          case 'end':
+            return _context.stop();
+        }
+      }
+    }, _callee, this);
+  }));
+
+  return function load(_x, _x2) {
+    return ref.apply(this, arguments);
+  };
+}();
+
+var main = function () {
+  var ref = _asyncToGenerator(regeneratorRuntime.mark(function _callee2(user) {
+    var baseUrl, nestedProjects, currentStorage, projects, languages, projectsByLanguages, languageStream;
+    return regeneratorRuntime.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            baseUrl = 'https://api.github.com/users/' + user + '/starred?per_page=100';
+            _context2.next = 3;
+            return Promise.all(load(baseUrl, user));
+
+          case 3:
+            nestedProjects = _context2.sent;
+            currentStorage = unescape(encodeURIComponent(JSON.stringify(localStorage))).length;
+
+            if (currentStorage > 40) {
+              store.clear();
+            }
+
+            projects = R.flatten(nestedProjects);
+
+            // const projectsByMonth = R.reduce(
+            //    (accum, project) => R.set(
+            //       dateLens(project),
+            //       R.view(dateLens(project), accum) ?
+            //         R.view(dateLens(project), accum).concat(project) :
+            //         [].concat(project),
+            //       accum
+            //     ),
+            //    {},
+            //    projects.filter(isFrom2016)
+            // )
+
+            languages = function languages(projectArray) {
+              return R.reduce(function (accum, project) {
+                return R.set(languageLens(project), R.view(languageLens(project), accum) ? R.view(languageLens(project), accum).concat(project) : [].concat(project), accum);
+              }, {}, projectArray);
+            };
+
+            projectsByLanguages = languages(projects.filter(isFrom2016));
+            languageStream = Object.keys(projectsByLanguages).map(function (language) {
+              var projectsWithLanguage = projectsByLanguages[language];
+              return {
+                name: language, total: projectsWithLanguage.length, values: R.range(1, 13).map(function (i) {
+                  return { x: i, y: projectsWithLanguage.filter(function (project) {
+                      return ~ ~moment(project.starred_at).format('M') === i;
+                    }).length };
+                })
+              };
+            });
+
+            //  console.log('Projects by Month', projectsByMonth)
+
+            console.log('Project by Languages', projectsByLanguages);
+            /*
+            console.log('Languages', R.mergeAll(Object.keys(projectsByMonth)
+                        .map(key => ({ [key] : languages(projectsByMonth[key]) })  )))
+                        */
+            console.log('Processed Stream', languageStream);
+
+            return _context2.abrupt('return', languageStream.sort(function (a, b) {
+              return b.total - a.total;
+            }).filter(function (d, i) {
+              return i < 7;
+            }));
+
+          case 13:
+          case 'end':
+            return _context2.stop();
+        }
+      }
+    }, _callee2, this);
+  }));
+
+  return function main(_x3) {
+    return ref.apply(this, arguments);
+  };
+}();
+
+var draw = function () {
+  var ref = _asyncToGenerator(regeneratorRuntime.mark(function _callee3(user) {
+    var rawData, width, height, maxValue, dataTotal, data, monthWidth, svg, stack, values, margin, layers, area, colorSchemes, mainLanguage, colorScheme, colors, invertedColors, color, icolor, squareDim, offset, allLanguages, labels;
+    return regeneratorRuntime.wrap(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            _context3.next = 2;
+            return main(user);
+
+          case 2:
+            rawData = _context3.sent;
+
+            if (rawData.length === 0) {
+              alert('The user has no starred repositories');
+            };
+            width = 705;
+            height = 394;
+
+            console.log('Filred and Sorted Raw Data', rawData);
+
+            maxValue = d3.max(rawData, function (rd) {
+              return rd.total;
+            });
+            dataTotal = R.reduce(function (accum, rd) {
+              return accum + rd.total;
+            }, 0, rawData);
+            data = R.reverse(rawData).map(function (rd) {
+              var scaleY = d3.scale.linear().domain([0, maxValue]).range([0, height / (rd.values.length / 2)]);
+
+              var scaleX = d3.scale.linear().domain([1, rd.values.length]).range([0, width / (rd.values.length / 2)]);
+
+              return {
+                name: rd.name,
+                total: rd.total,
+                values: rd.values.map(function (v) {
+                  return { x: scaleX(v.x), y: scaleY(v.y) };
+                })
+              };
+            });
+
+            console.log('Data', data);
+
+            monthWidth = width / R.head(data).values.length;
+            svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+            stack = d3.layout.stack().offset('wiggle');
+            values = d3.range(data.length).map(function (i) {
+              return data[i].values;
+            });
+            margin = { top: 50, bottom: 50, left: 0, right: 0 };
+            layers = stack(values);
+            area = createArea(layers, height, width, margin);
+            colorSchemes = {
+              'JavaScript': 'YlGnBu',
+              'Python': 'PuBu',
+              'Go': 'OrRd',
+              'Ruby': 'BuPu',
+              'Swift': 'PuRd',
+              'R': 'YlOrBr',
+              'Shell': 'YlOrRd',
+              'null': 'Greys'
+            };
+            mainLanguage = R.last(data).name;
+
+            console.log('mainLanguage', mainLanguage);
+            colorScheme = colorSchemes[mainLanguage] ? colorSchemes[mainLanguage] : 'YlGnBu';
+            colors = colorbrewer[colorScheme][7];
+            invertedColors = R.reverse(colors);
+            color = d3.scale.ordinal().range(colors);
+            icolor = d3.scale.ordinal().range(invertedColors);
+
+            svg.append("rect").attr("x", 0).attr("y", 0).attr("width", width).attr("height", height).attr('stroke', '#333').attr('stroke-width', '0.3').attr('stroke-dasharray', '5,5').style('fill', '#f2f5fb');
+
+            squareDim = 20;
+            offset = 10;
+            allLanguages = R.reverse(data).map(function (d) {
+              return d.name;
+            }).join(', ');
+            labels = svg.append('g').attr('class', 'labels');
+
+            labels.selectAll('rect').data(data).enter().append('rect').attr('x', function (d, i) {
+              return width - (squareDim * i + offset) - 25;
+            }).attr('y', offset).attr("width", squareDim).attr("height", squareDim).style('fill', function (d, i) {
+              return color(i);
+            });
+
+            labels.append('text').text(user + ' - ' + dataTotal).attr('x', offset).attr('y', offset + squareDim).style('font-family', 'Merriweather').style('font-size', '1em').style('fill', '#666');
+
+            labels.append('text').text(allLanguages).attr('class', 'languages').attr('x', offset).attr('y', squareDim + offset + 20).style('font-family', 'Merriweather').style('font-size', '0.8em').style('fill', '#111');
+
+            labels.append('text').text('Least').attr('x', width - offset - 25 - 5).attr('y', squareDim + offset + 15).style('font-family', 'Merriweather').style('font-size', '0.6em').style('fill', '#aaa');
+
+            labels.append('text').text('Most').attr('x', width - 25 - (offset + (data.length - 1) * squareDim)).attr('y', squareDim + offset + 15).style('font-family', 'Merriweather').style('font-size', '0.6em').style('fill', '#aaa');
+
+            svg.append('g').attr('class', 'x-lines').selectAll('line').data(R.range(0, 12)).enter().append('line').attr('x1', function (d, i) {
+              return monthWidth * i;
+            }).attr('x2', function (d, i) {
+              return monthWidth * i + 1;
+            }).attr('y1', 0).attr('y2', height).attr('stroke', '#333').attr('stroke-width', '0.1').attr('stroke-dasharray', '5,5');
+
+            svg.append("g").attr("class", "x-axis").attr("transform", "translate(0," + (height - margin.bottom / 2 + 10) + ")").selectAll('text').data(R.range(0, 12)).enter().append('text').text(function (d, i) {
+              return moment(new Date(2016, i + 1, 0)).format('MMM');
+            }).style('text-transform', 'uppercase').style('font-family', 'Inconsolata').style('font-size', '0.8em').style('fill', '#aaa').attr('x', function (d, i) {
+              return monthWidth * i + monthWidth / 2 - 10;
+            });
+
+            svg.selectAll('path').data(layers).enter().append('path').attr('class', 'layer').attr('d', area).attr('data-language', function (d, i) {
+              return data[i].name;
+            }).style('fill', function (d, i) {
+              return color(i);
+            }).on('mouseover', function (d, i) {
+              svg.selectAll('.layer').transition().duration(180).attr('opacity', function (d, j) {
+                return j != i ? 0.6 : 1;
+              });
+              svg.select('.languages').transition().duration(180).text(data[i].name + ': ' + data[i].total + ' out of ' + dataTotal + ' projects');
+              d3.select(this).attr('stroke', function () {
+                return d3.rgb(this.style.fill).darker(0.4);
+              });
+            }).on('mouseout', function () {
+              d3.select(this).attr('stroke', "none");
+              svg.selectAll(".layer").transition().duration(180).attr("opacity", "1");
+              svg.select('.languages').transition().duration(180).text(allLanguages);
+            });
+
+          case 40:
+          case 'end':
+            return _context3.stop();
+        }
+      }
+    }, _callee3, this);
+  }));
+
+  return function draw(_x4) {
+    return ref.apply(this, arguments);
+  };
+}();
+
+function createArea(layers, height, width, margin) {
+  var m = 118;
+  var x = d3.scale.linear().domain([0, m - 1]).range([margin.left, width - margin.right]);
+
+  var y = d3.scale.linear().domain([0, d3.max(layers, createLayer)]).range([height - margin.bottom, margin.top]);
+
+  return d3.svg.area().interpolate('basis').x(function (d) {
+    return x(d.x);
+  }).y0(function (d) {
+    return y(d.y0);
+  }).y1(function (d) {
+    return y(d.y0 + d.y);
+  });
+
+  function createLayer(layer) {
+    return d3.max(layer, function (d) {
+      return d.y0 + d.y;
+    });
+  }
+}
+
+function getQueryVariable(variable) {
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split("=");
+    if (pair[0] == variable) {
+      return pair[1];
+    }
+  }
+  return false;
+}
+
+var user = getQueryVariable('user');
+
+draw(user ? user : 'jjperezaguinaga');
+  </script>
+
+  
+  
+
+</body>
+</html>
+ 
